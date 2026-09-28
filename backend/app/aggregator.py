@@ -17,20 +17,20 @@ def fetch_all_jobs(
     companies: list[Company],
     client: httpx.Client,
     sources: dict[str, JobSource] = SOURCES,
-) -> list[Job]:
+) -> dict[str, list[Job]]:
     """Fetch and normalize jobs for every company in the list.
 
-    Picks the right adapter for each company from `sources`. If one company
-    fails (bad token, network error, unexpected data), log it and keep going,
-    so one broken board does not hide jobs from the others.
+    Returns {company name: jobs} for the companies that succeeded. A company
+    that failed (bad token, network error, unexpected data) is logged and
+    left out, so the caller can tell "fetch failed" apart from "no jobs".
     """
-    jobs: list[Job] = []
+    results: dict[str, list[Job]] = {}
     for i, company in enumerate(companies):
         if i > 0:
             time.sleep(DELAY_SECONDS)
         source = sources[company.source]
         try:
-            jobs.extend(source.fetch_jobs(company, client))
+            results[company.name] = source.fetch_jobs(company, client)
         except (httpx.HTTPError, KeyError, ValidationError) as exc:
             logger.warning("Skipping %s (%s): %r", company.name, company.source, exc)
-    return jobs
+    return results

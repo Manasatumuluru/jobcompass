@@ -6,6 +6,9 @@ __pycache__/
 # Secrets (API keys go here, never commit them)
 .env
 
+# Local SQLite database (rebuilt by `python -m app.refresh`)
+*.db
+
 # Node
 node_modules/
 

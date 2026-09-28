@@ -42,7 +42,7 @@ class BadDataSource(OkSource):
         return [{}]
 
 
-def run(companies, sources) -> list[Job]:
+def run(companies, sources) -> dict[str, list[Job]]:
     with make_client(lambda request: httpx.Response(500)) as client:
         return fetch_all_jobs(companies, client, sources)
 
@@ -54,30 +54,31 @@ def test_routes_each_company_to_its_source():
         Company(name="B", source="lever", token="b"),
     ]
 
-    jobs = run(companies, {"greenhouse": greenhouse, "lever": lever})
+    results = run(companies, {"greenhouse": greenhouse, "lever": lever})
 
     assert greenhouse.seen == ["A"]
     assert lever.seen == ["B"]
-    assert [(job.company, job.source) for job in jobs] == [("A", "greenhouse"), ("B", "lever")]
+    assert [job.source for job in results["A"]] == ["greenhouse"]
+    assert [job.source for job in results["B"]] == ["lever"]
 
 
-def test_skips_failed_company_and_keeps_others():
+def test_failed_company_is_left_out_others_kept():
     companies = [
         Company(name="Broken", source="greenhouse", token="nope"),
         Company(name="Works", source="ashby", token="ok"),
     ]
 
-    jobs = run(companies, {"greenhouse": FailingSource(), "ashby": OkSource()})
+    results = run(companies, {"greenhouse": FailingSource(), "ashby": OkSource()})
 
-    assert [job.company for job in jobs] == ["Works"]
+    assert list(results) == ["Works"]
 
 
-def test_skips_company_with_unexpected_data():
+def test_company_with_unexpected_data_is_left_out():
     companies = [
         Company(name="Weird", source="lever", token="x"),
         Company(name="Works", source="ashby", token="ok"),
     ]
 
-    jobs = run(companies, {"lever": BadDataSource(), "ashby": OkSource()})
+    results = run(companies, {"lever": BadDataSource(), "ashby": OkSource()})
 
-    assert [job.company for job in jobs] == ["Works"]
+    assert list(results) == ["Works"]

@@ -22,6 +22,7 @@ Owner: Maan (full stack engineer). This is a **learning project** and a portfoli
 - Create venv: `py -3.12 -m venv .venv`
 - Activate: `.venv\Scripts\activate`
 - Install: `pip install -r requirements.txt`
+- Load jobs into the database: `python -m app.refresh` (or `POST /refresh`)
 - Run API: `uvicorn app.main:app --reload` → http://127.0.0.1:8000/docs
 - Tests: `pytest`
 
@@ -30,7 +31,7 @@ Owner: Maan (full stack engineer). This is a **learning project** and a portfoli
 2. [x] Fetch jobs from Greenhouse public job board API for ~5 companies
 3. [x] Lever, Ashby, Workday adapters sharing one normalized `Job` model (adapter pattern)
 3b. [ ] Licensed aggregator APIs (JSearch for LinkedIn/Indeed listings, Adzuna). **Never scrape LinkedIn or Indeed directly.**
-4. [ ] Store jobs in a database, deduplicate across sources
+4. [x] Store jobs in a database, deduplicate across sources
 5. [ ] Load H-1B government data, fuzzy-match employer names to companies
 6. [ ] Experience (0–4 yrs) and skill filters, match score
 7. [ ] React UI with filters and job cards

@@ -1,0 +1,35 @@
+[
+  {
+    "id": "2193db3f-77c5-43b8-b030-8f92c9882bf1",
+    "text": "Android Engineer - Experience",
+    "categories": {
+      "commitment": "Permanent",
+      "department": "Engineering",
+      "location": "London",
+      "team": "Experience",
+      "allLocations": [
+        "London",
+        "Stockholm"
+      ]
+    },
+    "createdAt": 1782214185805,
+    "hostedUrl": "https://jobs.lever.co/spotify/2193db3f-77c5-43b8-b030-8f92c9882bf1",
+    "applyUrl": "https://jobs.lever.co/spotify/2193db3f-77c5-43b8-b030-8f92c9882bf1/apply"
+  },
+  {
+    "id": "d87833d0-fb78-4794-b45d-3fe5c8274bc8",
+    "text": "Artist & Label Partnerships Contractor, Vietnam",
+    "categories": {
+      "commitment": "Short Term",
+      "department": "Content",
+      "location": "Ho Chi Minh",
+      "team": "Music Business",
+      "allLocations": [
+        "Ho Chi Minh"
+      ]
+    },
+    "createdAt": 1787802187805,
+    "hostedUrl": "https://jobs.lever.co/spotify/d87833d0-fb78-4794-b45d-3fe5c8274bc8",
+    "applyUrl": "https://jobs.lever.co/spotify/d87833d0-fb78-4794-b45d-3fe5c8274bc8/apply"
+  }
+]

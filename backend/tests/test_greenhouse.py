@@ -1,32 +1,19 @@
 """Tests for the Greenhouse adapter. No real network calls are made."""
-import json
 from datetime import datetime
-from pathlib import Path
 
 import httpx
 import pytest
 
-from app.sources import greenhouse
-from app.sources.greenhouse import fetch_greenhouse_jobs, parse_job
+from app.models import Company
+from app.sources.greenhouse import fetch_jobs, parse_job
+from tests.conftest import USER_AGENT, load_fixture, make_client
 
-FIXTURE = Path(__file__).parent / "fixtures" / "greenhouse_jobs.json"
-USER_AGENT = "JobCompass-tests"
+STRIPE = Company(name="Stripe", source="greenhouse", token="stripe")
 
 
 @pytest.fixture
 def board_json() -> dict:
-    return json.loads(FIXTURE.read_text(encoding="utf-8"))
-
-
-@pytest.fixture(autouse=True)
-def no_delay(monkeypatch):
-    """Skip the polite sleep so tests run fast."""
-    monkeypatch.setattr(greenhouse, "DELAY_SECONDS", 0)
-
-
-def make_client(handler) -> httpx.Client:
-    """A client whose requests go to `handler` instead of the internet."""
-    return httpx.Client(transport=httpx.MockTransport(handler), headers={"User-Agent": USER_AGENT})
+    return load_fixture("greenhouse_jobs.json")
 
 
 def test_parse_job_maps_fields(board_json):
@@ -38,7 +25,7 @@ def test_parse_job_maps_fields(board_json):
     assert job.title == "Abuse Investigator"
     assert job.location == "Dublin"
     assert job.url == "https://stripe.com/jobs/search?gh_jid=8172487"
-    assert isinstance(job.updated_at, datetime)
+    assert isinstance(job.posted_at, datetime)
 
 
 def test_parse_job_missing_location(board_json):
@@ -49,7 +36,7 @@ def test_parse_job_missing_location(board_json):
     assert parse_job(raw_no_key, "Stripe").location == "Unknown"
 
 
-def test_fetch_greenhouse_jobs_calls_api(board_json):
+def test_fetch_jobs_calls_api(board_json):
     seen_requests = []
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -57,7 +44,7 @@ def test_fetch_greenhouse_jobs_calls_api(board_json):
         return httpx.Response(200, json=board_json)
 
     with make_client(handler) as client:
-        jobs = fetch_greenhouse_jobs([{"name": "Stripe", "board_token": "stripe"}], client)
+        jobs = fetch_jobs(STRIPE, client)
 
     assert len(jobs) == 2
     assert all(job.company == "Stripe" for job in jobs)
@@ -65,18 +52,9 @@ def test_fetch_greenhouse_jobs_calls_api(board_json):
     assert seen_requests[0].headers["User-Agent"] == USER_AGENT
 
 
-def test_fetch_greenhouse_jobs_skips_failed_company(board_json):
+def test_fetch_jobs_raises_on_404():
     def handler(request: httpx.Request) -> httpx.Response:
-        if "/not-a-real-board/" in request.url.path:
-            return httpx.Response(404, json={"status": 404, "error": "Job not found"})
-        return httpx.Response(200, json=board_json)
+        return httpx.Response(404, json={"status": 404, "error": "Job not found"})
 
-    companies = [
-        {"name": "Broken", "board_token": "not-a-real-board"},
-        {"name": "Stripe", "board_token": "stripe"},
-    ]
-    with make_client(handler) as client:
-        jobs = fetch_greenhouse_jobs(companies, client)
-
-    assert len(jobs) == 2
-    assert {job.company for job in jobs} == {"Stripe"}
+    with make_client(handler) as client, pytest.raises(httpx.HTTPStatusError):
+        fetch_jobs(STRIPE, client)

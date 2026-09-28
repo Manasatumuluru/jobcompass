@@ -1,20 +1,14 @@
-"""Fetch jobs from Greenhouse's public job board API.
+"""Greenhouse adapter: fetch jobs from Greenhouse's public job board API.
 
 API docs: https://developers.greenhouse.io/job-board.html
 Endpoint:  GET https://boards-api.greenhouse.io/v1/boards/{board_token}/jobs
 No API key is needed to read public job boards.
 """
-import logging
-import time
-
 import httpx
 
-from app.models import Job
-
-logger = logging.getLogger(__name__)
+from app.models import Company, Job
 
 BASE_URL = "https://boards-api.greenhouse.io/v1/boards"
-DELAY_SECONDS = 0.5  # be polite: small pause between companies
 
 
 def fetch_board(board_token: str, client: httpx.Client) -> list[dict]:
@@ -43,27 +37,13 @@ def parse_job(raw: dict, company: str) -> Job:
         source="greenhouse",
         external_id=str(raw["id"]),
         company=company,
-        title=raw["title"],
+        title=raw["title"].strip(),
         location=location,
         url=raw["absolute_url"],
-        updated_at=raw["updated_at"],  # Pydantic parses the ISO string into a datetime
+        posted_at=raw.get("first_published"),  # ISO string; Pydantic parses it
     )
 
 
-def fetch_greenhouse_jobs(companies: list[dict[str, str]], client: httpx.Client) -> list[Job]:
-    """Fetch and normalize jobs for every company in the list.
-
-    If one company fails (bad token, network error), log it and keep going,
-    so one broken board does not hide jobs from the others.
-    """
-    jobs: list[Job] = []
-    for i, company in enumerate(companies):
-        if i > 0:
-            time.sleep(DELAY_SECONDS)
-        try:
-            raw_jobs = fetch_board(company["board_token"], client)
-        except httpx.HTTPError as exc:
-            logger.warning("Skipping %s: %s", company["name"], exc)
-            continue
-        jobs.extend(parse_job(raw, company["name"]) for raw in raw_jobs)
-    return jobs
+def fetch_jobs(company: Company, client: httpx.Client) -> list[Job]:
+    """Adapter entry point: all jobs for one Greenhouse company."""
+    return [parse_job(raw, company.name) for raw in fetch_board(company.token, client)]

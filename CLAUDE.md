@@ -5,10 +5,8 @@ A web app that finds software roles asking for 0 to 4 years of experience at com
 Owner: Maan (full stack engineer). This is a **learning project** and a portfolio piece, so she must be able to explain every line in an interview.
 
 ## How to work with Maan (important)
-- **Explain before you change.** Before editing, say in plain words what you will change and why. Keep it short.
-- **Plan first.** For any new feature, propose a plan and wait for her approval before writing code.
-- **Small steps.** One focused change at a time. After each change, tell her how to run or test it.
-- **Leave one piece for her.** In each step, leave one small function as a `TODO(Maan)` with a docstring and hints, instead of writing it. Review her version when she finishes.
+- **Build the whole step, then explain.** For each roadmap step, write all the code (no `TODO(Maan)` stubs), test it, commit it, then explain it: what each file does, a line-by-line walkthrough of the tricky parts, and how to run or test it.
+- **Small steps.** Keep each commit focused on one roadmap step.
 - **Teach the concept.** When you use a pattern or library for the first time (adapter pattern, dependency injection, ORM, etc.), explain it in 2 to 3 sentences.
 - **End each step with 2 to 3 interview-style questions** about what was built.
 - **Never invent data.** Sponsorship info must come from real government data (DOL LCA disclosures, USCIS H-1B Employer Data Hub). Never hardcode or guess it.
@@ -29,8 +27,8 @@ Owner: Maan (full stack engineer). This is a **learning project** and a portfoli
 
 ## Roadmap
 1. [x] Project setup, FastAPI hello world
-2. [ ] Fetch jobs from Greenhouse public job board API for ~5 companies
-3. [ ] Lever, Ashby, Workday adapters sharing one normalized `Job` model (adapter pattern)
+2. [x] Fetch jobs from Greenhouse public job board API for ~5 companies
+3. [x] Lever, Ashby, Workday adapters sharing one normalized `Job` model (adapter pattern)
 3b. [ ] Licensed aggregator APIs (JSearch for LinkedIn/Indeed listings, Adzuna). **Never scrape LinkedIn or Indeed directly.**
 4. [ ] Store jobs in a database, deduplicate across sources
 5. [ ] Load H-1B government data, fuzzy-match employer names to companies

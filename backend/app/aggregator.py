@@ -6,7 +6,7 @@ import httpx
 from pydantic import ValidationError
 
 from app.models import Company, Job
-from app.sources import SOURCES, FetchJobs
+from app.sources import SOURCES, JobSource
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +16,7 @@ DELAY_SECONDS = 0.5  # be polite: small pause between companies
 def fetch_all_jobs(
     companies: list[Company],
     client: httpx.Client,
-    sources: dict[str, FetchJobs] = SOURCES,
+    sources: dict[str, JobSource] = SOURCES,
 ) -> list[Job]:
     """Fetch and normalize jobs for every company in the list.
 
@@ -28,9 +28,9 @@ def fetch_all_jobs(
     for i, company in enumerate(companies):
         if i > 0:
             time.sleep(DELAY_SECONDS)
-        fetch_jobs = sources[company.source]
+        source = sources[company.source]
         try:
-            jobs.extend(fetch_jobs(company, client))
+            jobs.extend(source.fetch_jobs(company, client))
         except (httpx.HTTPError, KeyError, ValidationError) as exc:
             logger.warning("Skipping %s (%s): %r", company.name, company.source, exc)
     return jobs

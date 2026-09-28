@@ -5,10 +5,11 @@ import httpx
 import pytest
 
 from app.models import Company
-from app.sources.ashby import fetch_jobs, parse_job
+from app.sources.ashby import AshbySource
 from tests.conftest import load_fixture, make_client
 
 RAMP = Company(name="Ramp", source="ashby", token="ramp")
+source = AshbySource()
 
 
 @pytest.fixture
@@ -17,7 +18,7 @@ def board_json() -> dict:
 
 
 def test_parse_job_maps_fields_and_strips_title(board_json):
-    job = parse_job(board_json["jobs"][0], "Ramp")  # real title is " Security Engineer, Cloud"
+    job = source.parse_job(board_json["jobs"][0], RAMP)  # real title is " Security Engineer, Cloud"
 
     assert job.source == "ashby"
     assert job.external_id == "34413f8d-26bf-4bbc-8ade-eb309a0e2245"
@@ -36,7 +37,7 @@ def test_fetch_jobs_skips_unlisted(board_json):
         return httpx.Response(200, json=board_json)
 
     with make_client(handler) as client:
-        jobs = fetch_jobs(RAMP, client)
+        jobs = source.fetch_jobs(RAMP, client)
 
     assert [job.external_id for job in jobs] == ["34413f8d-26bf-4bbc-8ade-eb309a0e2245"]
     assert seen_urls == ["https://api.ashbyhq.com/posting-api/job-board/ramp"]

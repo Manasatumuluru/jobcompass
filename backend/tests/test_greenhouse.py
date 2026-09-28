@@ -5,10 +5,11 @@ import httpx
 import pytest
 
 from app.models import Company
-from app.sources.greenhouse import fetch_jobs, parse_job
+from app.sources.greenhouse import GreenhouseSource
 from tests.conftest import USER_AGENT, load_fixture, make_client
 
 STRIPE = Company(name="Stripe", source="greenhouse", token="stripe")
+source = GreenhouseSource()
 
 
 @pytest.fixture
@@ -17,7 +18,7 @@ def board_json() -> dict:
 
 
 def test_parse_job_maps_fields(board_json):
-    job = parse_job(board_json["jobs"][0], "Stripe")
+    job = source.parse_job(board_json["jobs"][0], STRIPE)
 
     assert job.source == "greenhouse"
     assert job.external_id == "8172487"
@@ -30,10 +31,10 @@ def test_parse_job_maps_fields(board_json):
 
 def test_parse_job_missing_location(board_json):
     raw = board_json["jobs"][0] | {"location": None}
-    assert parse_job(raw, "Stripe").location == "Unknown"
+    assert source.parse_job(raw, STRIPE).location == "Unknown"
 
     raw_no_key = {k: v for k, v in board_json["jobs"][0].items() if k != "location"}
-    assert parse_job(raw_no_key, "Stripe").location == "Unknown"
+    assert source.parse_job(raw_no_key, STRIPE).location == "Unknown"
 
 
 def test_fetch_jobs_calls_api(board_json):
@@ -44,7 +45,7 @@ def test_fetch_jobs_calls_api(board_json):
         return httpx.Response(200, json=board_json)
 
     with make_client(handler) as client:
-        jobs = fetch_jobs(STRIPE, client)
+        jobs = source.fetch_jobs(STRIPE, client)
 
     assert len(jobs) == 2
     assert all(job.company == "Stripe" for job in jobs)
@@ -57,4 +58,4 @@ def test_fetch_jobs_raises_on_404():
         return httpx.Response(404, json={"status": 404, "error": "Job not found"})
 
     with make_client(handler) as client, pytest.raises(httpx.HTTPStatusError):
-        fetch_jobs(STRIPE, client)
+        source.fetch_jobs(STRIPE, client)

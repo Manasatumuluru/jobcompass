@@ -6,12 +6,13 @@ import pytest
 
 from app.models import Company
 from app.sources import workday
-from app.sources.workday import fetch_jobs, parse_job, parse_site_url
+from app.sources.workday import WorkdaySource, parse_site_url
 from tests.conftest import load_fixture, make_client
 
 SITE_URL = "https://nvidia.wd5.myworkdayjobs.com/NVIDIAExternalCareerSite"
 NVIDIA = Company(name="NVIDIA", source="workday", token=SITE_URL)
 API_URL = "https://nvidia.wd5.myworkdayjobs.com/wday/cxs/nvidia/NVIDIAExternalCareerSite/jobs"
+source = WorkdaySource()
 
 
 @pytest.fixture
@@ -25,7 +26,7 @@ def test_parse_site_url(url):
 
 
 def test_parse_job_maps_fields(page_json):
-    job = parse_job(page_json["jobPostings"][0], "NVIDIA", "nvidia.wd5.myworkdayjobs.com", "NVIDIAExternalCareerSite")
+    job = source.parse_job(page_json["jobPostings"][0], NVIDIA)
 
     assert job.source == "workday"
     assert job.external_id == "JR2015623"
@@ -37,7 +38,7 @@ def test_parse_job_maps_fields(page_json):
 
 def test_parse_job_without_bullet_fields_uses_path_as_id(page_json):
     raw = page_json["jobPostings"][0] | {"bulletFields": []}
-    job = parse_job(raw, "NVIDIA", "nvidia.wd5.myworkdayjobs.com", "NVIDIAExternalCareerSite")
+    job = source.parse_job(raw, NVIDIA)
 
     assert job.external_id == "/job/Israel-Yokneam/Software-Engineer--SPE_JR2015623"
 
@@ -53,13 +54,13 @@ def test_fetch_jobs_stops_on_short_page(page_json):
         return httpx.Response(200, json=page_json)
 
     with make_client(handler) as client:
-        jobs = fetch_jobs(NVIDIA, client)
+        jobs = source.fetch_jobs(NVIDIA, client)
 
     assert len(jobs) == 2
     assert bodies == [{"appliedFacets": {}, "limit": 20, "offset": 0, "searchText": "software engineer"}]
 
 
-def test_fetch_jobs_pages_until_max_pages(page_json, monkeypatch):
+def test_fetch_raw_pages_until_max_pages(page_json, monkeypatch):
     """Full pages keep coming, so it stops at MAX_PAGES."""
     monkeypatch.setattr(workday, "MAX_PAGES", 3)
     full_page = {"jobPostings": page_json["jobPostings"] * 10}  # 20 postings
@@ -70,7 +71,7 @@ def test_fetch_jobs_pages_until_max_pages(page_json, monkeypatch):
         return httpx.Response(200, json=full_page)
 
     with make_client(handler) as client:
-        jobs = fetch_jobs(NVIDIA, client)
+        raw = source.fetch_raw(NVIDIA, client)
 
     assert offsets == [0, 20, 40]
-    assert len(jobs) == 60
+    assert len(raw) == 60

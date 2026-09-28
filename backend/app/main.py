@@ -1,4 +1,4 @@
-"""Entry point for the H1B Job Finder API.
+"""Entry point for the JobCompass API.
 
 Run from the backend folder with:
     uvicorn app.main:app --reload
@@ -6,7 +6,7 @@ Run from the backend folder with:
 from fastapi import FastAPI
 
 app = FastAPI(
-    title="H1B Job Finder",
+    title="JobCompass",
     description="Finds 0-4 year roles at companies with H-1B sponsorship history.",
     version="0.1.0",
 )

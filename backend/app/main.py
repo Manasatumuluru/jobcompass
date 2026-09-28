@@ -3,7 +3,14 @@
 Run from the backend folder with:
     uvicorn app.main:app --reload
 """
+import httpx
 from fastapi import FastAPI
+
+from app.companies import GREENHOUSE_COMPANIES
+from app.models import Job
+from app.sources.greenhouse import fetch_greenhouse_jobs
+
+USER_AGENT = "JobCompass/0.1 (learning project)"
 
 app = FastAPI(
     title="JobCompass",
@@ -19,14 +26,11 @@ def health_check() -> dict:
 
 
 @app.get("/jobs")
-def list_jobs() -> list[dict]:
-    """Returns jobs. For now it is fake data; Step 2 replaces it with real postings."""
-    return [
-        {
-            "company": "Example Corp",
-            "title": "Software Engineer I",
-            "location": "Houston, TX",
-            "years_required": "0-2",
-            "h1b_history": True,
-        }
-    ]
+def list_jobs() -> list[Job]:
+    """Returns live jobs from each company's Greenhouse board.
+
+    Fetches on every request for now (a few seconds). Step 4 stores jobs in a
+    database so this becomes fast.
+    """
+    with httpx.Client(headers={"User-Agent": USER_AGENT}, timeout=10.0) as client:
+        return fetch_greenhouse_jobs(GREENHOUSE_COMPANIES, client)
